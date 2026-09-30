@@ -1100,8 +1100,13 @@ select:focus {
   font-size: 18px;
   display: flex;
   justify-content: space-between;
-  gap: 8px;
-  overflow-wrap: anywhere;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+}
+
+.team h3 span:last-child {
+  white-space: nowrap;
+  color: var(--muted);
 }
 
 .team .names {
