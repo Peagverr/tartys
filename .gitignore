@@ -3,3 +3,5 @@ dist
 .claude/settings.local.json
 .wrangler
 .dev.vars
+# WASM MediaPipe копируется из node_modules скриптом postinstall
+public/mediapipe

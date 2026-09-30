@@ -1162,3 +1162,91 @@ select:focus {
     text-align: center;
   }
 }
+
+/* ---------- Камера ---------- */
+
+.cam-box {
+  position: absolute;
+  top: 84px;
+  left: 16px;
+  width: min(220px, 40vw);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: #000;
+  pointer-events: none;
+}
+
+.cam-box .cam-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.cam-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 800;
+  background: rgba(0, 0, 0, 0.55);
+  color: var(--text);
+}
+
+.cam-label.hot,
+.cam-now.hot {
+  color: var(--gold);
+}
+
+.cam-label.bad,
+.cam-now.bad {
+  color: #ff9a9a;
+}
+
+.cam-setup {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+}
+
+.cam-view {
+  border-radius: 14px;
+  overflow: hidden;
+  background: #000;
+  border: 1px solid var(--line);
+  aspect-ratio: 16 / 9;
+  display: grid;
+  place-items: center;
+}
+
+.cam-view .cam-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.cam-placeholder {
+  color: var(--muted);
+  font-weight: 700;
+  padding: 16px;
+  text-align: center;
+}
+
+.cam-now {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 20px;
+  margin: 0 0 10px;
+}
+
+@media (max-width: 640px) {
+  .cam-setup {
+    grid-template-columns: 1fr;
+  }
+  .cam-box {
+    top: 76px;
+  }
+}

@@ -69,7 +69,7 @@ let tutorial: Tutorial | null = null;
 let room: RoomClient | null = null;
 let resultTimer = 0;
 let demoTimer = 0;
-type View = 'play' | 'menu' | 'screen' | 'result' | 'pause' | 'lobby' | 'wait-result';
+type View = 'play' | 'menu' | 'screen' | 'result' | 'pause' | 'lobby' | 'wait-result' | 'camera-setup';
 let view: View = 'menu';
 /** Счёт серии реваншей за текущий визит. */
 const series = new Map<string, [number, number]>();
@@ -166,6 +166,9 @@ function begin(m: Mode): void {
   clearTimeout(resultTimer);
   clearTimeout(demoTimer);
   if (m.kind !== 'online') leaveRoom();
+  // Камера управляет только одиночным боем с ботом и онлайн-дуэлью.
+  if (m.kind === 'local' || m.kind === 'tutorial') closeCamera();
+  camBox.hidden = true;
   mode = m;
   tutorial = null;
   lastOver = null;
@@ -321,7 +324,8 @@ function joinRoom(code: string, role: 'player' | 'screen'): void {
   history.replaceState(null, '', `${location.pathname}?room=${code}${role === 'screen' ? '&screen=1' : ''}`);
   renderer.reset();
   room = new RoomClient(code, role, playerName() || 'Игрок', {
-    onWelcome: (_role, _side, note) => {
+    onWelcome: (_role, side, note) => {
+      if (side !== null) camera?.setSide(side);
       connNote = note ?? '';
       configureHud();
     },
@@ -360,7 +364,7 @@ function onLobby(L: LobbyInfo): void {
     updateRematchStatus(L);
     return;
   }
-  if (view === 'wait-result') return;
+  if (view === 'wait-result' || view === 'camera-setup') return;
   view = 'lobby';
   input.stop();
   hud.hidden = true;
@@ -426,6 +430,7 @@ function renderLobby(L: LobbyInfo): void {
       <p class="hint-line" style="margin:0 0 14px">${esc(status)}</p>
       <div class="stack">
         ${me ? `<button class="btn primary" type="button" data-go="ready">${me.ready ? 'Не готов' : 'Готов'}</button>` : ''}
+        ${me ? `<button class="btn" type="button" data-go="camera-online">${camera ? 'Камера включена ✓ - настроить' : 'Управлять камерой (бета)'}</button>` : ''}
         <button class="btn" type="button" data-go="leave">Выйти</button>
       </div>
       <p class="hint-line">Матч ${L.matchSec} с · результат считает сервер · ${auth.user ? 'рейтинг изменится, если у обоих есть аккаунт' : 'войди в аккаунт, чтобы играть на рейтинг'}</p>
@@ -697,6 +702,7 @@ function finishTutorial(): void {
 // ---------- Экраны ----------
 
 function showMenu(): void {
+  closeCamera();
   if (mode.kind !== 'demo') begin({ kind: 'demo' });
   view = 'menu';
   const d = settings.difficulty;
@@ -718,6 +724,7 @@ function showMenu(): void {
       <div class="label">Бой с ботом</div>
       <div class="seg">${seg}</div>
       <button class="btn ${firstTime ? '' : 'primary'}" type="button" data-go="bot">В бой</button>
+      <button class="btn" type="button" data-go="camera-bot">Тяни руками: веб-камера <span class="badge">бета</span></button>
       <div class="label">С друзьями</div>
       <div class="row">
         <button class="btn" type="button" data-go="duel-create">Дуэль по ссылке</button>
@@ -1019,6 +1026,133 @@ function showJoinCode(): void {
   screen.querySelector<HTMLInputElement>('input[name=code]')?.focus();
 }
 
+// ---------- Камера «Тяни руками» ----------
+
+type CameraMod = typeof import('./camera/camera-control');
+type CameraControl = import('./camera/camera-control').CameraControl;
+let camera: CameraControl | null = null;
+let cameraNext: (() => void) | null = null;
+let cameraLoading = false;
+let cameraError = '';
+const camBox = $('.cam-box', hud);
+const camLabel = $('.cam-label', hud);
+
+function closeCamera(): void {
+  camera?.close();
+  camera = null;
+  camBox.hidden = true;
+}
+
+function mySide(): Side {
+  return mode.kind === 'online' ? (room?.side ?? 0) : 0;
+}
+
+function showCameraSetup(next: () => void): void {
+  cameraNext = next;
+  view = 'camera-setup';
+  renderCameraSetup();
+}
+
+function renderCameraSetup(): void {
+  const side = mySide();
+  const where = side === 0 ? 'влево (ты за синих)' : 'вправо (ты за красных)';
+  const ready = !!camera?.gestures.readout.calibrated;
+  showScreen(`<div class="card wide">
+    <h2>Тяни руками</h2>
+    <p class="result-sub">Веб-камера вместо кнопок. Видео обрабатывается прямо в браузере и никуда не отправляется. Своя сторона каната - <b>${where}</b>. Нужны голова, плечи и руки в кадре - можно сидя за ноутбуком.</p>
+    <div class="rps">
+      <div><h4>Рывок</h4><p>Руки вместе перед собой - <b>резко дерни их в свою сторону</b>, как будто рвешь канат.</p></div>
+      <div><h4>Упор</h4><p><b>Наклонись всем корпусом в свою сторону</b> и держи. Выпрямился - упор снят.</p></div>
+      <div><h4>Передышка</h4><p>Просто <b>стой или сиди прямо</b>. Силы восстанавливаются.</p></div>
+    </div>
+    <div class="cam-setup">
+      <div class="cam-view">${camera ? '' : `<div class="cam-placeholder">${cameraLoading ? 'Загружаем камеру и нейросеть…' : 'Камера выключена'}</div>`}</div>
+      <div class="cam-side">
+        <p class="cam-now" id="cam-now">${camera ? '' : 'Нажми «Включить камеру» и разреши доступ'}</p>
+        <p class="hint-line" style="text-align:left;margin:0"><span id="try-brace">${camera?.triedBrace ? '✓' : '○'} Упор</span> · <span id="try-yank">${camera?.triedYank ? '✓' : '○'} Рывок</span> - попробуй оба перед боем</p>
+        <div class="error">${esc(cameraError)}</div>
+      </div>
+    </div>
+    <div class="stack" style="margin-top:14px">
+      ${
+        camera
+          ? `<button class="btn primary" type="button" data-go="cam-go" id="cam-go" ${ready ? '' : 'disabled'}>${mode.kind === 'online' ? 'Готово - в лобби' : 'В бой'}</button>
+             <div class="row"><button class="btn" type="button" data-go="cam-recalib">Перекалибровать</button><button class="btn" type="button" data-go="cam-off">Выключить камеру</button></div>`
+          : `<button class="btn primary" type="button" data-go="cam-start" ${cameraLoading ? 'disabled' : ''}>Включить камеру</button>`
+      }
+      <button class="btn" type="button" data-go="cam-back">Назад</button>
+    </div>
+    <p class="hint-line">Клавиатура и кнопки на экране продолжают работать вместе с камерой.</p>
+  </div>`);
+  if (camera) $('.cam-view', screen).appendChild(camera.canvas);
+}
+
+function updateCameraSetup(now: number): void {
+  if (!camera) return;
+  const [text, cls] = camera.label(now);
+  const el = document.getElementById('cam-now');
+  if (el) {
+    el.textContent = text;
+    el.className = 'cam-now ' + cls;
+  }
+  const go = document.getElementById('cam-go') as HTMLButtonElement | null;
+  if (go) go.disabled = !camera.gestures.readout.calibrated;
+  const tb = document.getElementById('try-brace');
+  const ty = document.getElementById('try-yank');
+  if (tb) tb.textContent = `${camera.triedBrace ? '✓' : '○'} Упор`;
+  if (ty) ty.textContent = `${camera.triedYank ? '✓' : '○'} Рывок`;
+}
+
+function updateCamBox(now: number): void {
+  if (!camera) return;
+  if (camBox.hidden) {
+    camBox.hidden = false;
+    camBox.prepend(camera.canvas);
+  }
+  const [text, cls] = camera.label(now);
+  setText(camLabel, 50, text, cls);
+}
+
+route('camera-bot', () => showCameraSetup(() => begin({ kind: 'bot', difficulty: settings.difficulty })));
+route('camera-online', () =>
+  showCameraSetup(() => {
+    view = 'lobby';
+    if (room?.lobby) renderLobby(room.lobby);
+  }),
+);
+route('cam-start', async () => {
+  cameraLoading = true;
+  cameraError = '';
+  renderCameraSetup();
+  try {
+    const mod: CameraMod = await import('./camera/camera-control');
+    const cam = await mod.CameraControl.open(mySide(), (cmd) => source?.command(cmd), () => undefined);
+    camera = cam;
+  } catch (e) {
+    const err = e as { message?: string; hint?: string };
+    cameraError = err.hint ? `${err.message}. ${err.hint}` : `Не удалось включить камеру: ${err.message ?? e}`;
+  }
+  cameraLoading = false;
+  if (view === 'camera-setup') renderCameraSetup();
+});
+route('cam-recalib', () => camera?.gestures.recalibrate());
+route('cam-off', () => {
+  closeCamera();
+  renderCameraSetup();
+});
+route('cam-go', () => {
+  const next = cameraNext;
+  cameraNext = null;
+  next?.();
+});
+route('cam-back', () => {
+  cameraNext = null;
+  if (mode.kind === 'online' && room?.lobby) {
+    view = 'lobby';
+    renderLobby(room.lobby);
+  } else showMenu();
+});
+
 // ---------- Маршруты кнопок ----------
 
 beforeRoute(() => {
@@ -1190,6 +1324,12 @@ function frame(t: number): void {
   last = t;
   const alpha = source.advance(dt);
   renderer.draw({ state: source.state, prevRope: source.prevRope, alpha, warn: tutorial?.warn ?? null, crew: crewSize() }, t / 1000);
+  if (camera) {
+    camera.enabled = view === 'play';
+    camera.tick(t);
+    if (view === 'play') updateCamBox(t);
+    else if (view === 'camera-setup') updateCameraSetup(t);
+  }
   if (!hud.hidden) updateHud(source.state);
   requestAnimationFrame(frame);
 }

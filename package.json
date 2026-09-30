@@ -11,7 +11,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit && tsc --noEmit -p worker",
     "dev:worker": "wrangler dev --port 8787",
-    "deploy": "npm run build && wrangler deploy"
+    "deploy": "npm run build && wrangler deploy",
+    "postinstall": "node scripts/copy-mediapipe.mjs"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260930.2",
@@ -22,6 +23,7 @@
     "wrangler": "^4.145.0"
   },
   "dependencies": {
+    "@mediapipe/tasks-vision": "^1.0.1",
     "qrcode": "^1.5.4"
   }
 }
