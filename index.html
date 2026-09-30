@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#141d38" />
+    <meta name="description" content="Тартыс — перетягивание каната, где побеждает тот, кто читает соперника: Рывок, Упор, Передышка." />
+    <title>Тартыс — перетягивание каната</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23141d38'/><path d='M6 38 Q32 30 58 38' stroke='%23c99a5b' stroke-width='6' fill='none' stroke-linecap='round'/><path d='M28 34h8l-2 14-2-4-2 4z' fill='%23e63946'/></svg>" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&family=Unbounded:wght@600;800;900&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="scene" aria-label="Игровое поле"></canvas>
+
+      <div id="hud" hidden>
+        <div class="hud-top">
+          <div class="side s0">
+            <div class="who"><b class="name"></b><span class="state"></span></div>
+            <div class="bar"><i class="fill"></i><i class="cost"></i></div>
+            <div class="meta"></div>
+          </div>
+          <div class="clock">
+            <div class="time">60</div>
+            <div class="series"></div>
+            <button class="pause-btn" type="button" aria-label="Пауза">❚❚</button>
+          </div>
+          <div class="side s1">
+            <div class="who"><b class="name"></b><span class="state"></span></div>
+            <div class="bar"><i class="fill"></i><i class="cost"></i></div>
+            <div class="meta"></div>
+          </div>
+        </div>
+        <div class="tut" hidden></div>
+        <div class="banner" hidden></div>
+        <div class="corner-qr" hidden></div>
+        <div class="rotate">Поверни телефон горизонтально — так просторнее</div>
+        <div class="pads">
+          <div class="pad pad0">
+            <button type="button" data-act="brace">УПОР<small class="k0b">держать S</small></button>
+            <button type="button" data-act="yank">РЫВОК<small class="k0y">W</small></button>
+          </div>
+          <div class="pad pad1">
+            <button type="button" data-act="yank">РЫВОК<small>↑</small></button>
+            <button type="button" data-act="brace">УПОР<small>держать ↓</small></button>
+          </div>
+        </div>
+      </div>
+
+      <div id="screen"></div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
