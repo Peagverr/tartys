@@ -9,6 +9,7 @@ const stats = (o: Partial<FighterStats> = {}): FighterStats => ({
   blockedByOpp: 0,
   blocks: 0,
   punishes: 0,
+  partial: 0,
   clashes: 0,
   exhaustions: 0,
   ...o,

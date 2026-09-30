@@ -529,7 +529,9 @@ function showOnlineResult(info: OverInfo): void {
   }
   const sub =
     r.reason === 'forfeit'
-      ? 'Соперник отключился и не вернулся — техническая победа'
+      ? crowd
+        ? 'Команда соперника отключилась и не вернулась — техническая победа'
+        : 'Соперник отключился и не вернулся — техническая победа'
       : r.reason === 'line'
         ? `Лента перетянута за линию ${sideName(r.winner!)} за ${fmtSec(r.durationSec)} с`
         : r.winner === null
@@ -563,7 +565,9 @@ function showOnlineResult(info: OverInfo): void {
       <table>
         <tr><th></th><th>${esc(n0)}</th><th>${esc(n1)}</th></tr>
         ${row('Рывков', a.yanks, b.yanks)}
-        ${row('Прошли', a.landed, b.landed)}
+        ${row('Прошли полностью', a.landed - (a.partial ?? 0), b.landed - (b.partial ?? 0))}
+        ${row('Частично погашены упором', a.partial ?? 0, b.partial ?? 0)}
+        ${row('Столкновения', a.clashes, b.clashes)}
         ${row('Врезались в упор', a.blockedByOpp, b.blockedByOpp)}
         ${row('Принято на упор', a.blocks, b.blocks)}
         ${row('Добиваний', a.punishes, b.punishes)}
@@ -890,7 +894,9 @@ function showResult(s: MatchState): void {
       <table>
         <tr><th></th><th>${esc(n0)}</th><th>${esc(n1)}</th></tr>
         ${row('Рывков', a.yanks, b.yanks)}
-        ${row('Прошли', a.landed, b.landed)}
+        ${row('Прошли полностью', a.landed - (a.partial ?? 0), b.landed - (b.partial ?? 0))}
+        ${row('Частично погашены упором', a.partial ?? 0, b.partial ?? 0)}
+        ${row('Столкновения', a.clashes, b.clashes)}
         ${row('Врезались в упор', a.blockedByOpp, b.blockedByOpp)}
         ${row('Принято на упор', a.blocks, b.blocks)}
         ${row('Добиваний', a.punishes, b.punishes)}

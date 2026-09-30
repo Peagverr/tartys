@@ -47,12 +47,12 @@ async function newSession(env: Env, userId: string): Promise<string> {
   return token;
 }
 
-const STAT_KEYS: (keyof FighterStats)[] = ['yanks', 'landed', 'blockedByOpp', 'blocks', 'punishes', 'clashes', 'exhaustions'];
+const STAT_KEYS: (keyof FighterStats)[] = ['yanks', 'landed', 'blockedByOpp', 'blocks', 'punishes', 'partial', 'clashes', 'exhaustions'];
 function cleanStats(x: unknown): FighterStats | null {
   if (!x || typeof x !== 'object') return null;
   const out = {} as FighterStats;
   for (const k of STAT_KEYS) {
-    const v = (x as Record<string, unknown>)[k];
+    const v = (x as Record<string, unknown>)[k] ?? 0;
     if (typeof v !== 'number' || !Number.isFinite(v) || v < 0 || v > 1000) return null;
     out[k] = Math.round(v);
   }

@@ -29,6 +29,8 @@ export interface FighterStats {
   /** Рывки соперника, которые я принял на упор. */
   blocks: number;
   punishes: number;
+  /** Из прошедших — частично погашены упором соперника. */
+  partial: number;
   clashes: number;
   exhaustions: number;
 }
@@ -97,7 +99,7 @@ function newFighter(): Fighter {
     actionTicks: 0,
     yankPower: 0,
     yankSync: false,
-    stats: { yanks: 0, landed: 0, blockedByOpp: 0, blocks: 0, punishes: 0, clashes: 0, exhaustions: 0 },
+    stats: { yanks: 0, landed: 0, blockedByOpp: 0, blocks: 0, punishes: 0, partial: 0, clashes: 0, exhaustions: 0 },
   };
 }
 
@@ -294,6 +296,7 @@ function resolveYank(s: MatchState, a: Side): void {
     } else {
       distance *= 1 - b * RULES.blockAbsorb;
       outcome = b > 0.05 ? 'partial' : 'landed';
+      if (outcome === 'partial') A.stats.partial++;
     }
   }
   if (outcome !== 'blocked') A.stats.landed++;
