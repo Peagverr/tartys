@@ -1177,12 +1177,19 @@ document.addEventListener('visibilitychange', () => {
 
 // ---------- Цикл ----------
 
+/** Сколько батыров на экране у каждой команды: в зале — по числу игроков. */
+function crewSize(): [number, number] {
+  if (mode.kind === 'tutorial') return [1, 1];
+  if (mode.kind === 'online' && room?.lobby?.mode === 'crowd' && room.snap) return [room.snap.n[0] || 1, room.snap.n[1] || 1];
+  return [3, 3];
+}
+
 let last = performance.now();
 function frame(t: number): void {
   const dt = (t - last) / 1000;
   last = t;
   const alpha = source.advance(dt);
-  renderer.draw({ state: source.state, prevRope: source.prevRope, alpha, warn: tutorial?.warn ?? null }, t / 1000);
+  renderer.draw({ state: source.state, prevRope: source.prevRope, alpha, warn: tutorial?.warn ?? null, crew: crewSize() }, t / 1000);
   if (!hud.hidden) updateHud(source.state);
   requestAnimationFrame(frame);
 }
