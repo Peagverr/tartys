@@ -42,6 +42,16 @@ describe('живой тренер', () => {
     expect(pickHint(s, 0)?.id).not.toBe('punish');
   });
 
+  it('с веб-камерой тренер говорит жестами', () => {
+    const s = live();
+    s.fighters[0].action = 'recover';
+    expect(pickHint(s, 0, true)?.text).toMatch(/Наклонись/);
+    const t = live();
+    t.fighters[1].stamina = 20;
+    expect(pickHint(t, 0, true)?.text).toMatch(/дерни руки/);
+    expect(pickHint(t, 0, false)?.text).toMatch(/рви/);
+  });
+
   it('до старта и после финала молчит', () => {
     expect(pickHint(createMatch(), 0)).toBeNull();
     const s = live();

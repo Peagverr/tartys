@@ -1331,7 +1331,7 @@ function updateCoach(t: number): void {
   if (coachable) {
     liveCoach.voiceOn = settings.sound;
     liveCoach.gapMs = mode.kind === 'bot' && mode.difficulty === 'hard' ? 4000 : 1200;
-    text = liveCoach.update(source.state, mySide(), t);
+    text = liveCoach.update(source.state, mySide(), t, !!camera);
   }
   coachTipEl.hidden = !text;
   if (text) setText(coachTipEl, 60, text);

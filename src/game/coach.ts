@@ -43,24 +43,38 @@ class Voice {
   }
 }
 
-/** Выбрать подсказку для стороны me. null — сейчас подсказывать нечего. */
-export function pickHint(s: MatchState, me: Side): Hint | null {
+/** Тексты подсказок: для кнопок и для жестов перед веб-камерой. */
+const TEXT = {
+  punishStun: ['Хват сбит - добивай! Рывок!', 'Хват сбит - дерни руки в свою сторону!'],
+  punishTired: ['Он выдохся - добивай! Рывок!', 'Он выдохся - дерни руки, добивай!'],
+  guard: ['Зажми упор - ответный рывок врежется в стену', 'Наклонись в свою сторону - упор, ответ врежется в стену'],
+  release: ['Отпусти упор, а то выдохнешься', 'Выпрямись, а то выдохнешься в упоре'],
+  wait: ['Он уперся - не рви, отдыхай, пусть тратит силы', 'Он уперся - не дергай, стой прямо и отдыхай'],
+  rest: ['Мало сил - передышка, копи на рывок', 'Мало сил - стой прямо, копи на рывок'],
+  attack: ['У него нет сил на упор - рви!', 'У него нет сил на упор - дерни руки в свою сторону!'],
+  final: ['Финал! Рывки сильнее - рискуй и отыгрывайся', 'Финал! Рывки сильнее - рискуй и отыгрывайся'],
+  ready: ['У него полно сил - жди рывка, готовь упор', 'У него полно сил - будь готов наклониться в упор'],
+} as const;
+
+/** Выбрать подсказку для стороны me. null — сейчас подсказывать нечего. camera — игрок управляет жестами. */
+export function pickHint(s: MatchState, me: Side, camera = false): Hint | null {
+  const c = camera ? 1 : 0;
   if (s.phase !== 'live') return null;
   const m = s.fighters[me];
   const o = s.fighters[other(me)];
   const oGuard = isGuarding(o) && o.brace > 0.5;
   if ((o.action === 'stunned' || o.action === 'exhausted') && m.action === 'none' && m.stamina >= 15) {
-    return { id: 'punish', text: o.action === 'stunned' ? 'Хват сбит - добивай! Рывок!' : 'Он выдохся - добивай! Рывок!', urgent: true };
+    return { id: 'punish', text: o.action === 'stunned' ? TEXT.punishStun[c] : TEXT.punishTired[c], urgent: true };
   }
   if (m.action === 'recover' && !m.braceHeld && o.stamina >= 30 && o.action === 'none') {
-    return { id: 'guard', text: 'Зажми упор - ответный рывок врежется в стену', urgent: true };
+    return { id: 'guard', text: TEXT.guard[c], urgent: true };
   }
-  if (isGuarding(m) && m.stamina < 25) return { id: 'release', text: 'Отпусти упор, а то выдохнешься' };
-  if (oGuard && m.action === 'none') return { id: 'wait', text: 'Он уперся - не рви, отдыхай, пусть тратит силы' };
-  if (m.stamina < 30 && !m.braceHeld && m.action === 'none') return { id: 'rest', text: 'Мало сил - передышка, копи на рывок' };
-  if (o.stamina < 30 && m.stamina >= 30 && o.action === 'none' && !oGuard) return { id: 'attack', text: 'У него нет сил на упор - рви!' };
-  if (isFinalStretch(s) && s.rope * dir(me) < 0) return { id: 'final', text: 'Финал! Рывки сильнее - рискуй и отыгрывайся' };
-  if (o.stamina >= 90 && o.action === 'none' && !oGuard && m.stamina >= 40) return { id: 'ready', text: 'У него полно сил - жди рывка, готовь упор' };
+  if (isGuarding(m) && m.stamina < 25) return { id: 'release', text: TEXT.release[c] };
+  if (oGuard && m.action === 'none') return { id: 'wait', text: TEXT.wait[c] };
+  if (m.stamina < 30 && !m.braceHeld && m.action === 'none') return { id: 'rest', text: TEXT.rest[c] };
+  if (o.stamina < 30 && m.stamina >= 30 && o.action === 'none' && !oGuard) return { id: 'attack', text: TEXT.attack[c] };
+  if (isFinalStretch(s) && s.rope * dir(me) < 0) return { id: 'final', text: TEXT.final[c] };
+  if (o.stamina >= 90 && o.action === 'none' && !oGuard && m.stamina >= 40) return { id: 'ready', text: TEXT.ready[c] };
   return null;
 }
 
@@ -82,9 +96,9 @@ export class LiveCoach {
   }
 
   /** Текст подсказки на этот кадр или null. */
-  update(s: MatchState, me: Side, now: number): string | null {
+  update(s: MatchState, me: Side, now: number, camera = false): string | null {
     if (!this.enabled) return null;
-    const h = pickHint(s, me);
+    const h = pickHint(s, me, camera);
     if (this.shown) {
       const age = now - this.shown.since;
       const same = h?.id === this.shown.hint.id;
