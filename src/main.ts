@@ -15,6 +15,7 @@ import {
 } from './engine/match';
 import { RULES } from './engine/rules';
 import { Sound } from './game/audio';
+import { LiveCoach } from './game/coach';
 import { Input } from './game/input';
 import { Renderer } from './game/renderer';
 import { Runner, type Driver } from './game/runner';
@@ -57,6 +58,8 @@ const sideEls = ([0, 1] as const).map((i) => ({
 const timeEl = $('.clock .time', hud);
 const seriesEl = $('.clock .series', hud);
 const pauseBtn = $('.pause-btn', hud);
+const coachTipEl = $('.coach-tip', hud);
+const liveCoach = new LiveCoach();
 
 const settings = loadSettings();
 const sound = new Sound();
@@ -173,6 +176,7 @@ function begin(m: Mode): void {
   tutorial = null;
   lastOver = null;
   freshChallenges = [];
+  liveCoach.reset();
   const drivers: Driver[] = [];
   let opts = {};
   const seed = (Date.now() ^ (Math.random() * 1e9)) >>> 0;
@@ -744,6 +748,7 @@ function showMenu(): void {
     </div>
     <div class="foot">
       <button class="linkish" type="button" data-go="sound">Звук: ${settings.sound ? 'вкл' : 'выкл'}</button>
+      <button class="linkish" type="button" data-go="coach">Тренер: ${settings.coach ? 'вкл' : 'выкл'}</button>
       <button class="linkish" type="button" data-go="len">Длина матча: ${settings.matchSec} с</button>
     </div>
   </div>`);
@@ -1192,6 +1197,11 @@ route('sound', () => {
   saveSettings(settings);
   showMenu();
 });
+route('coach', () => {
+  settings.coach = !settings.coach;
+  saveSettings(settings);
+  showMenu();
+});
 route('len', () => {
   const opts = [45, 60, 90];
   settings.matchSec = opts[(opts.indexOf(settings.matchSec) + 1) % opts.length];
@@ -1311,6 +1321,22 @@ document.addEventListener('visibilitychange', () => {
 
 // ---------- Цикл ----------
 
+/** Живой тренер: только для одного человека на своей стороне (бот, онлайн-дуэль, игрок в зале). */
+function updateCoach(t: number): void {
+  const coachable =
+    settings.coach &&
+    view === 'play' &&
+    (mode.kind === 'bot' || (mode.kind === 'online' && room?.role === 'player' && room.side !== null));
+  let text: string | null = null;
+  if (coachable) {
+    liveCoach.voiceOn = settings.sound;
+    liveCoach.gapMs = mode.kind === 'bot' && mode.difficulty === 'hard' ? 4000 : 1200;
+    text = liveCoach.update(source.state, mySide(), t);
+  }
+  coachTipEl.hidden = !text;
+  if (text) setText(coachTipEl, 60, text);
+}
+
 /** Сколько батыров на экране у каждой команды: в зале — по числу игроков. */
 function crewSize(): [number, number] {
   if (mode.kind === 'tutorial') return [1, 1];
@@ -1330,6 +1356,7 @@ function frame(t: number): void {
     if (view === 'play') updateCamBox(t);
     else if (view === 'camera-setup') updateCameraSetup(t);
   }
+  updateCoach(t);
   if (!hud.hidden) updateHud(source.state);
   requestAnimationFrame(frame);
 }

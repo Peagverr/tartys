@@ -1250,3 +1250,35 @@ select:focus {
     top: 76px;
   }
 }
+
+/* Живой тренер */
+.coach-tip {
+  position: absolute;
+  top: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: calc(100% - 32px);
+  width: max-content;
+  padding: 8px 16px;
+  border-radius: 99px;
+  background: rgba(14, 19, 40, 0.78);
+  border: 1px solid rgba(255, 209, 102, 0.55);
+  color: var(--gold);
+  font-weight: 800;
+  font-size: clamp(13px, 1.7vw, 17px);
+  text-align: center;
+  pointer-events: none;
+  animation: rise 0.2s ease-out;
+}
+
+.coach-tip::before {
+  content: 'Тренер: ';
+  color: var(--muted);
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .coach-tip {
+    top: 104px;
+  }
+}

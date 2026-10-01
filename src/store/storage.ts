@@ -21,13 +21,15 @@ export interface Settings {
   matchSec: number;
   difficulty: Difficulty;
   tutorialDone: boolean;
+  /** Живой тренер с подсказками во время матча. */
+  coach: boolean;
 }
 
 const SETTINGS_KEY = 'tartys.settings.v1';
 const HISTORY_KEY = 'tartys.history.v1';
 const HISTORY_LIMIT = 100;
 
-const DEFAULT_SETTINGS: Settings = { sound: true, matchSec: 60, difficulty: 'easy', tutorialDone: false };
+const DEFAULT_SETTINGS: Settings = { sound: true, matchSec: 60, difficulty: 'easy', tutorialDone: false, coach: true };
 
 function read<T>(key: string, fallback: T): T {
   try {
