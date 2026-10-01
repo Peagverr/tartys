@@ -488,6 +488,7 @@ function renderLobby(L: LobbyInfo): void {
     }
     <div class="teams" style="margin-bottom:14px">${teamBox(0)}${teamBox(1)}</div>
     <div class="stack">
+      ${mySide !== null ? `<button class="btn primary" type="button" data-go="camera-online">${camera ? 'Камера включена ✓ - настроить' : 'Играть кулаками через веб-камеру'}</button>` : ''}
       ${mySide !== null ? `<button class="btn" type="button" data-go="switch-team">Перейти в «${esc(teams[mySide === 0 ? 1 : 0])}»</button>` : ''}
       <button class="btn" type="button" data-go="leave">Выйти</button>
     </div>
@@ -1059,19 +1060,17 @@ function showCameraSetup(next: () => void): void {
 }
 
 function renderCameraSetup(): void {
-  const side = mySide();
-  const where = side === 0 ? 'влево (ты за синих)' : 'вправо (ты за красных)';
   const ready = !!camera?.gestures.readout.calibrated;
   showScreen(`<div class="card wide">
     <h2>Тяни руками</h2>
-    <p class="result-sub">Веб-камера вместо кнопок. Видео обрабатывается прямо в браузере и никуда не отправляется. Своя сторона каната - <b>${where}</b>. Нужны голова, плечи и руки в кадре - можно сидя за ноутбуком.</p>
+    <p class="result-sub">Веб-камера вместо кнопок, можно играть сидя за столом. Подними обе ладони к камере. Видео обрабатывается прямо в браузере и никуда не отправляется.</p>
     <div class="rps">
-      <div><h4>Рывок</h4><p>Руки вместе перед собой - <b>резко дерни их в свою сторону</b>, как будто рвешь канат.</p></div>
-      <div><h4>Упор</h4><p><b>Наклонись всем корпусом в свою сторону</b> и держи. Выпрямился - упор снят.</p></div>
-      <div><h4>Передышка</h4><p>Просто <b>стой или сиди прямо</b>. Силы восстанавливаются.</p></div>
+      <div><h4>Рывок</h4><p><b>Сожми правый кулак</b> - один рывок. Разожми и сожми снова - следующий.</p></div>
+      <div><h4>Упор</h4><p><b>Сожми левый кулак и держи</b>. Разжал - упор снят.</p></div>
+      <div><h4>Передышка</h4><p><b>Открытые ладони</b>. Силы восстанавливаются.</p></div>
     </div>
     <div class="cam-setup">
-      <div class="cam-view">${camera ? '' : `<div class="cam-placeholder">${cameraLoading ? 'Загружаем камеру и нейросеть…' : 'Камера выключена'}</div>`}</div>
+      <div class="cam-view">${camera ? '' : `<div class="cam-placeholder">${cameraLoading ? 'Загружаем камеру и распознавание рук…' : 'Камера выключена'}</div>`}</div>
       <div class="cam-side">
         <p class="cam-now" id="cam-now">${camera ? '' : 'Нажми «Включить камеру» и разреши доступ'}</p>
         <p class="hint-line" style="text-align:left;margin:0"><span id="try-brace">${camera?.triedBrace ? '✓' : '○'} Упор</span> · <span id="try-yank">${camera?.triedYank ? '✓' : '○'} Рывок</span> - попробуй оба перед боем</p>
@@ -1082,7 +1081,7 @@ function renderCameraSetup(): void {
       ${
         camera
           ? `<button class="btn primary" type="button" data-go="cam-go" id="cam-go" ${ready ? '' : 'disabled'}>${mode.kind === 'online' ? 'Готово - в лобби' : 'В бой'}</button>
-             <div class="row"><button class="btn" type="button" data-go="cam-recalib">Перекалибровать</button><button class="btn" type="button" data-go="cam-off">Выключить камеру</button></div>`
+             <button class="btn" type="button" data-go="cam-off">Выключить камеру</button>`
           : `<button class="btn primary" type="button" data-go="cam-start" ${cameraLoading ? 'disabled' : ''}>Включить камеру</button>`
       }
       <button class="btn" type="button" data-go="cam-back">Назад</button>
@@ -1140,7 +1139,6 @@ route('cam-start', async () => {
   cameraLoading = false;
   if (view === 'camera-setup') renderCameraSetup();
 });
-route('cam-recalib', () => camera?.gestures.recalibrate());
 route('cam-off', () => {
   closeCamera();
   renderCameraSetup();
