@@ -434,7 +434,7 @@ function renderLobby(L: LobbyInfo): void {
       <p class="hint-line" style="margin:0 0 14px">${esc(status)}</p>
       <div class="stack">
         ${me ? `<button class="btn primary" type="button" data-go="ready">${me.ready ? 'Не готов' : 'Готов'}</button>` : ''}
-        ${me ? `<button class="btn" type="button" data-go="camera-online">${camera ? 'Камера включена ✓ - настроить' : 'Управлять камерой (бета)'}</button>` : ''}
+        ${me ? `<button class="btn" type="button" data-go="camera-online">${camera ? 'Камера включена ✓ - настроить' : 'Управлять кулаками через веб-камеру'}</button>` : ''}
         <button class="btn" type="button" data-go="leave">Выйти</button>
       </div>
       <p class="hint-line">Матч ${L.matchSec} с · результат считает сервер · ${auth.user ? 'рейтинг изменится, если у обоих есть аккаунт' : 'войди в аккаунт, чтобы играть на рейтинг'}</p>
@@ -729,7 +729,7 @@ function showMenu(): void {
       <div class="label">Бой с ботом</div>
       <div class="seg">${seg}</div>
       <button class="btn ${firstTime ? '' : 'primary'}" type="button" data-go="bot">В бой</button>
-      <button class="btn" type="button" data-go="camera-bot">Тяни руками: веб-камера <span class="badge">бета</span></button>
+      <button class="btn" type="button" data-go="camera-bot">Тяни руками: веб-камера <span class="badge">кулаки</span></button>
       <div class="label">С друзьями</div>
       <div class="row">
         <button class="btn" type="button" data-go="duel-create">Дуэль по ссылке</button>
